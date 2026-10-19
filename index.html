@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>El banco de córdobas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&display=swap">
+<style>
+/* Layout: banknote-ledger board. Big slab numerals for money values, hyperlegible text for projection. */
+:root {
+  --paper: #f3f1e6;
+  --paper-2: #e7e4d3;
+  --ink: #16251d;
+  --ink-soft: #4b5a50;
+  --line: #c9c5ae;
+  --played: #d6d3c4;
+  --played-ink: #8d8b7e;
+  --gold: #b0821c;
+  --c1: #1f6f5c; --c2: #b2462e; --c3: #3b5aa6; --c4: #8a3f8c;
+  --c5: #c07a14; --c6: #2f7d32; --c7: #a8364f; --c8: #3f6d80;
+  --tile-ink: #ffffff;
+  --display: "Alfa Slab One", "Rockwell", "Georgia", serif;
+  --body: "Atkinson Hyperlegible", "Verdana", "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #101a15; --paper-2: #18251e; --ink: #ecebdf; --ink-soft: #a9b3aa;
+    --line: #2c3a32; --played: #1d2721; --played-ink: #5d6a62; --gold: #d9a640;
+    --c1: #2a8a72; --c2: #c1563d; --c3: #4a6bbd; --c4: #9a50a0;
+    --c5: #c98a22; --c6: #3d8f41; --c7: #b94761; --c8: #4c8299;
+    --tile-ink: #ffffff; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #101a15; --paper-2: #18251e; --ink: #ecebdf; --ink-soft: #a9b3aa;
+  --line: #2c3a32; --played: #1d2721; --played-ink: #5d6a62; --gold: #d9a640;
+  --c1: #2a8a72; --c2: #c1563d; --c3: #4a6bbd; --c4: #9a50a0;
+  --c5: #c98a22; --c6: #3d8f41; --c7: #b94761; --c8: #4c8299;
+  --tile-ink: #ffffff; color-scheme: dark;
+}
+html, body { height: 100%; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: clamp(16px, 1.3vw, 22px);
+  line-height: 1.4;
+}
+.app {
+  min-height: 100%;
+  box-sizing: border-box;
+  padding-block: clamp(16px, 2.5vw, 36px);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: clamp(16px, 2vw, 28px);
+  max-width: 1500px; margin: 0 auto;
+}
+header.bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  border-bottom: 3px double var(--line); padding-bottom: 12px;
+}
+.brand { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; min-width: 0; }
+.brand h1 {
+  font-family: var(--display); font-weight: 400; margin: 0;
+  font-size: clamp(26px, 3.4vw, 54px); line-height: 1; letter-spacing: .01em;
+  text-wrap: balance;
+}
+.brand .serial {
+  font-size: .8em; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 4px solid var(--gold); outline-offset: 3px; }
+.btn {
+  border: 2px solid var(--ink); background: transparent; border-radius: 8px;
+  padding: .55em 1em; font-weight: 700; display: inline-flex; align-items: center; gap: .5em;
+}
+.btn:hover { background: var(--paper-2); }
+.btn.danger { border-color: #b2462e; color: #b2462e; }
+.btn.danger.armed { background: #b2462e; color: #fff; }
+
+/* Home grid */
+.grid {
+  display: grid; gap: clamp(12px, 1.4vw, 22px);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+@media (max-width: 900px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.cat {
+  position: relative; text-align: left; border: 0; border-radius: 12px;
+  background: var(--cat); color: var(--tile-ink);
+  padding: clamp(16px, 1.8vw, 28px); min-height: clamp(130px, 17vh, 220px);
+  display: flex; flex-direction: column; justify-content: space-between; gap: 12px;
+  box-shadow: inset 0 0 0 6px rgba(255,255,255,.14), inset 0 0 0 7px rgba(0,0,0,.12);
+  transition: transform .12s ease;
+}
+.cat:not(.finished):hover { transform: translateY(-3px); }
+.cat .name { font-family: var(--display); font-weight: 400; font-size: clamp(20px, 2.1vw, 36px); line-height: 1.08; text-wrap: balance; }
+.cat .left { font-size: .9em; letter-spacing: .08em; text-transform: uppercase; opacity: .9; font-variant-numeric: tabular-nums; }
+.cat .pips { display: flex; gap: 6px; }
+.cat .pip { width: 14px; height: 14px; border-radius: 50%; background: rgba(255,255,255,.9); }
+.cat .pip.done { background: rgba(0,0,0,.28); }
+.cat.finished { background: var(--played); color: var(--played-ink); box-shadow: inset 0 0 0 2px var(--line); }
+.cat.finished:hover { box-shadow: inset 0 0 0 3px var(--played-ink); }
+.cat.finished .pip { background: var(--played-ink); opacity: .4; }
+
+.foot { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; color: var(--ink-soft); }
+.confirm { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+/* Values */
+.cat-head { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.chip { width: 22px; height: 22px; border-radius: 50%; background: var(--cat); flex: none; }
+.cat-head h2 { font-family: var(--display); font-weight: 400; margin: 0; font-size: clamp(28px, 3.6vw, 60px); line-height: 1.05; text-wrap: balance; }
+.values { display: grid; gap: clamp(12px, 1.4vw, 22px); grid-template-columns: repeat(5, minmax(0, 1fr)); }
+@media (max-width: 760px) { .values { grid-template-columns: minmax(0, 1fr); } }
+.val { display: flex; flex-direction: column; gap: 8px; }
+.note {
+  border: 0; border-radius: 12px; background: var(--cat); color: var(--tile-ink);
+  min-height: clamp(150px, 30vh, 340px); padding: 14px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  box-shadow: inset 0 0 0 6px rgba(255,255,255,.16), inset 0 0 0 7px rgba(0,0,0,.12);
+  transition: transform .12s ease;
+}
+.note:not(:disabled):hover { transform: translateY(-4px); }
+.note .amt { font-family: var(--display); font-size: clamp(44px, 6vw, 110px); line-height: 1; font-variant-numeric: tabular-nums; }
+.note .cur { letter-spacing: .2em; text-transform: uppercase; font-weight: 700; font-size: .85em; }
+.note .team { font-size: .85em; font-weight: 700; background: rgba(0,0,0,.22); padding: 2px 10px; border-radius: 999px; }
+.note:disabled { background: var(--played); color: var(--played-ink); box-shadow: none; cursor: not-allowed; }
+.note:disabled .team { background: transparent; }
+.reopen { align-self: center; border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: .3em 1em; font-size: .9em; color: var(--ink-soft); }
+.reopen:hover { background: var(--paper-2); color: var(--ink); }
+
+/* Question */
+.qcard {
+  flex: 1; border-radius: 16px; border: 3px solid var(--cat);
+  background: var(--paper-2); display: flex; flex-direction: column;
+  min-height: 60vh; overflow: hidden;
+}
+.qtop { background: var(--cat); color: var(--tile-ink); display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px clamp(16px, 2vw, 28px); }
+.qtop .qcat { font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.qtop .qamt { font-family: var(--display); font-size: clamp(22px, 2.4vw, 40px); line-height: 1; font-variant-numeric: tabular-nums; }
+.qbody { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(18px, 3vh, 40px); padding: clamp(20px, 4vw, 60px); text-align: center; }
+.equipo { font-family: var(--display); background: var(--gold); color: #1a1408; padding: .25em .9em; border-radius: 999px; font-size: clamp(18px, 2vw, 32px); letter-spacing: .04em; }
+.qtext {
+  border: 0; background: transparent; padding: 0; max-width: 32ch; min-width: 0;
+  font-size: clamp(30px, 4.4vw, 76px); font-weight: 700; line-height: 1.15; text-wrap: balance;
+}
+.qtext em, .answer em { font-style: italic; }
+.hint { color: var(--ink-soft); font-size: .95em; }
+.answer {
+  border-top: 3px double var(--line); padding-top: clamp(14px, 2vh, 28px); max-width: 36ch; min-width: 0;
+  font-size: clamp(26px, 3.6vw, 62px); line-height: 1.2; color: var(--cat-text, var(--ink)); font-weight: 700; text-wrap: balance;
+}
+.answer .lbl { display: block; font-size: .4em; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-soft); font-weight: 700; margin-bottom: .3em; }
+@media (prefers-reduced-motion: no-preference) {
+  .answer { animation: rise .35s ease-out; }
+  @keyframes rise { from { opacity: .2; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+}
+@media (prefers-reduced-motion: reduce) { .cat, .note { transition: none; } }
+</style>
+<style>*,*::before,*::after{box-sizing:border-box}body{margin:0}</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<script>
+const CATS = [
+  { name: "El alfabeto", color: "var(--c1)", q: [
+    ["Comment s'appelle la lettre J?", "jota"],
+    ["Épelle <em>jugo</em>.", "jota, u, ge, o"],
+    ["Quelle lettre ne se prononce jamais?", "la H (hache)"],
+    ["Épelle <em>taxi</em> et <em>kiwi</em>.", "te, a, equis, i<br>ka, i, uve doble, i"],
+    ["Épelle ton nom de famille en espagnol, sans erreur.", "À juger par l'enseignant"]
+  ]},
+  { name: "Los números", color: "var(--c2)", q: [
+    ["67 et 89", "sesenta y siete<br>ochenta y nueve"],
+    ["115 et 348", "ciento quince<br>trescientos cuarenta y ocho"],
+    ["777 et 1 500", "setecientos setenta y siete<br>mil quinientos"],
+    ["2 026 et 15 900", "dos mil veintiséis<br>quince mil novecientos"],
+    ["1 999 et 2 750 000", "mil novecientos noventa y nueve<br>dos millones setecientos cincuenta mil"]
+  ]},
+  { name: "Las preguntas y los pronombres", color: "var(--c3)", q: [
+    ["je, tu, nous", "yo, tú, nosotros / nosotras"],
+    ["quand, où, comment", "cuándo, dónde, cómo"],
+    ["il, elle, vous (singulier formel)", "él, ella, usted"],
+    ["Complète : ¿___ son ellos?<br>¿___ es tu nombre?", "¿<em>Quiénes</em> son ellos?<br>¿<em>Cuál</em> es tu nombre?"],
+    ["Pose une question avec <em>por qué</em> et une avec <em>quién</em> à un coéquipier, qui répond.", "À juger par l'enseignant"]
+  ]},
+  { name: "Los saludos y las presentaciones", color: "var(--c4)", q: [
+    ["Bonjour (le matin), salut", "buenos días, hola"],
+    ["Comment allez-vous? (vous singulier formel) + la réponse", "¿Cómo está (usted)?<br>Estoy (muy) bien, gracias."],
+    ["à bientôt, à demain, au revoir", "hasta pronto, hasta mañana, adiós"],
+    ["« Comment t'appelles-tu? » avec <em>tú</em> et avec <em>usted</em>", "¿Cómo te llamas?<br>¿Cómo se llama?"],
+    ["Présente-toi en 4 phrases : nom, âge, origine, enchanté.", "À juger par l'enseignant"]
+  ]},
+  { name: "Los días, los meses y las estaciones", color: "var(--c5)", q: [
+    ["lundi, mardi, mercredi", "lunes, martes, miércoles"],
+    ["l'été, l'hiver", "el verano, el invierno"],
+    ["juin, juillet, août, octobre", "junio, julio, agosto, octubre"],
+    ["Demande la date d'aujourd'hui et réponds.", "¿Cuál es la fecha de hoy? (¿Qué fecha es hoy?)<br>Hoy es el ... de ... de 2026."],
+    ["Dis ta date d'anniversaire et la saison.", "Mi cumpleaños es el ... de ...<br>Es en (otoño)."]
+  ]},
+  { name: "Los alimentos y gustar", color: "var(--c6)", q: [
+    ["lait, poulet, fromage", "leche, pollo, queso"],
+    ["carotte, ananas, concombre", "zanahoria, piña, pepino"],
+    ["avoir faim, avoir soif", "tener hambre, tener sed"],
+    ["J'aime le chocolat.<br>J'aime les frites.", "Me gusta el chocolate.<br>Me gustan las papas fritas."],
+    ["Nous n'aimons pas les oignons, mais ils aiment la pizza.", "No nos gustan las cebollas, pero (a ellos) les gusta la pizza."]
+  ]},
+  { name: "La escuela", color: "var(--c7)", q: [
+    ["crayon, stylo, livre", "lápiz, bolígrafo, libro"],
+    ["élève, professeur, directeur", "estudiante (alumno), profesor, director"],
+    ["Nomme trois matières.", "matemáticas, ciencias, historia, etc."],
+    ["chaise, tableau, sac à dos", "silla, pizarra, mochila"],
+    ["Je n'aime pas les examens, mais j'aime la récréation.", "No me gustan los exámenes, pero me gusta el recreo."]
+  ]},
+  { name: "Los verbos", color: "var(--c8)", q: [
+    ["manger, boire, lire", "comer, beber, leer"],
+    ["étudier, écrire, écouter", "estudiar, escribir, escuchar"],
+    ["Conjugue <em>tener</em> : yo, tú, nosotros.", "tengo, tienes, tenemos"],
+    ["<em>hacer</em> (yo), <em>poder</em> (ellos), <em>ser</em> (nosotros)", "hago, pueden, somos"],
+    ["Je suis étudiant, mais aujourd'hui je suis malade.", "Soy estudiante, pero hoy estoy enfermo / enferma."]
+  ]}
+];
+const VALUES = [100, 200, 300, 400, 500];
+const KEY = "banco-cordobas-jugadas-v1";
+
+let played = {};
+try { played = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { played = {}; }
+function save() { try { localStorage.setItem(KEY, JSON.stringify(played)); } catch (e) {} }
+const k = (c, v) => c + "-" + v;
+const isPlayed = (c, v) => !!played[k(c, v)];
+const leftIn = c => VALUES.filter((_, v) => !isPlayed(c, v)).length;
+
+let view = { name: "home" };
+let armed = false;
+const app = document.getElementById("app");
+
+function header(showHome) {
+  return `<header class="bar">
+    <div class="brand"><h1>El banco de córdobas</h1><span class="serial">Etapa 1</span></div>
+    ${showHome ? `<button class="btn" data-act="home" id="btn-home">← Accueil</button>` : ""}
+  </header>`;
+}
+
+function render() {
+  if (view.name === "home") {
+    const total = CATS.length * VALUES.length;
+    const done = Object.keys(played).filter(x => played[x]).length;
+    app.innerHTML = header(false) + `
+      <div class="grid">
+        ${CATS.map((c, i) => {
+          const left = leftIn(i);
+          return `<button class="cat${left === 0 ? " finished" : ""}" style="--cat:${c.color}" data-act="cat" data-c="${i}"${left === 0 ? ' data-finished="1"' : ""}>
+            <span class="name">${c.name}</span>
+            <span class="pips">${VALUES.map((_, v) => `<span class="pip ${isPlayed(i, v) ? "done" : ""}"></span>`).join("")}</span>
+            <span class="left">${left === 0 ? "Terminée" : left + " question" + (left > 1 ? "s" : "")}</span>
+          </button>`;
+        }).join("")}
+      </div>
+      <div class="foot">
+        <span>${done} / ${total} questions jouées</span>
+        ${armed
+          ? `<span class="confirm"><span>Tout remettre à zéro?</span>
+               <button class="btn danger armed" data-act="reset-yes" id="btn-reset-yes">Oui, nouvelle partie</button>
+               <button class="btn" data-act="reset-no" id="btn-reset-no">Annuler</button></span>`
+          : `<button class="btn danger" data-act="reset" id="btn-reset">Nouvelle partie</button>`}
+      </div>`;
+  } else if (view.name === "cat") {
+    const c = CATS[view.c];
+    app.innerHTML = header(true) + `
+      <div class="cat-head" style="--cat:${c.color}"><span class="chip"></span><h2>${c.name}</h2></div>
+      <div class="values" style="--cat:${c.color}">
+        ${VALUES.map((val, v) => {
+          const p = isPlayed(view.c, v);
+          return `<div class="val">
+            <button class="note" data-act="q" data-v="${v}" ${p ? "disabled" : ""} aria-label="${val} córdobas">
+              <span class="amt">${val}</span><span class="cur">córdobas</span>
+              ${v === 4 ? `<span class="team">En equipo</span>` : ""}
+            </button>
+            ${p ? `<button class="reopen" data-act="reopen" data-v="${v}">Rouvrir</button>` : ""}
+          </div>`;
+        }).join("")}
+      </div>`;
+  } else if (view.name === "q") {
+    const c = CATS[view.c];
+    const [q, a] = c.q[view.v];
+    app.innerHTML = header(true) + `
+      <section class="qcard" style="--cat:${c.color}; --cat-text:${c.color}">
+        <div class="qtop"><span class="qcat">${c.name}</span><span class="qamt">${VALUES[view.v]} córdobas</span></div>
+        <div class="qbody">
+          ${view.v === 4 ? `<span class="equipo">¡En equipo!</span>` : ""}
+          <button class="qtext" data-act="reveal" id="btn-reveal">${q}</button>
+          ${view.shown
+            ? `<div class="answer"><span class="lbl">Respuesta</span>${a}</div>`
+            : `<span class="hint">Clique sur la question pour voir la réponse</span>`}
+        </div>
+      </section>`;
+  }
+}
+
+app.addEventListener("click", e => {
+  const b = e.target.closest("[data-act]");
+  if (!b || b.disabled) return;
+  const act = b.dataset.act;
+  if (act === "home") { view = { name: "home" }; armed = false; }
+  else if (act === "cat") { view = { name: "cat", c: +b.dataset.c }; }
+  else if (act === "q") {
+    const v = +b.dataset.v;
+    played[k(view.c, v)] = true; save();
+    view = { name: "q", c: view.c, v, shown: false };
+  }
+  else if (act === "reveal") { view.shown = !view.shown; }
+  else if (act === "reopen") { delete played[k(view.c, +b.dataset.v)]; save(); }
+  else if (act === "reset") { armed = true; }
+  else if (act === "reset-no") { armed = false; }
+  else if (act === "reset-yes") { played = {}; save(); armed = false; }
+  render();
+  window.scrollTo(0, 0);
+});
+
+render();
+</script>
+</body>
+</html>
